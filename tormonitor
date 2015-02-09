@@ -1,0 +1,448 @@
+#!/usr/bin/env python
+#
+# Tor Monitor - a GTK applicaton to display Tor circuits and streams
+# Copyright (C) 2015  Tails developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import datetime
+import gettext
+import logging
+import os
+import threading
+import sys
+
+try:
+    import pycountry
+except ImportError:
+    pycountry = None
+
+import stem
+import stem.connection
+import stem.control
+import stem.descriptor.remote
+
+from gi.repository import (GLib,
+                           GObject,
+                           Gtk)
+
+gettext.install('tormonitor')
+
+if os.environ.has_key('DEBUG') and os.environ['DEBUG']:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.getLogger('stem').setLevel(logging.WARNING)
+
+class TorMonitorWindow(Gtk.ApplicationWindow):
+
+    # Constants used to distinguish circuits and streams in our TreeStore
+    TYPE_CIRC = 0
+    TYPE_STREAM = 1
+
+    def __init__(self, app):
+        Gtk.Window.__init__(self, application=app)
+
+        self._listeners_initialized = False
+        self._circ_to_iter = {}
+        self._stream_to_iter = {}
+        self.controller = self.get_application().controller
+
+        self._create_ui()
+
+        if self.controller:
+            self.init_listeners()
+            self.populate_treeview()
+        else:
+            GLib.timeout_add_seconds(1, self.controller_connect_cb)
+            self._hbox.set_sensitive(False)
+            self._infobar_label.set_text(_("Cannot connect to the Tor daemon. "
+                                           "Tor Monitor will try to reconnect..."))
+            self._infobar.set_message_type(Gtk.MessageType.ERROR)
+            self._infobar.show()
+
+    def _create_ui(self):
+        self.set_default_size(600, 400)
+        self.set_icon_name('tormonitor')
+        self.connect('delete-event', self.delete_event_cb)
+
+        headerbar = Gtk.HeaderBar()
+        headerbar.set_title(_("Tor Monitor"))
+        headerbar.set_subtitle(_("Display Tor circuits and streams"))
+        headerbar.set_show_close_button(True)
+        self.set_titlebar(headerbar)
+
+        grid = Gtk.Grid()
+        self.add(grid)
+
+        self._infobar = Gtk.InfoBar()
+        self._infobar.set_no_show_all(True)
+        self._infobar_label = Gtk.Label("");
+        self._infobar_label.show()
+        self._infobar.get_content_area().add(self._infobar_label)
+        self._infobar.add_button(_("OK"), Gtk.ResponseType.OK)
+        self._infobar.connect('response', lambda infobar, rid, data=None: self._infobar.hide())
+        grid.attach(self._infobar, 0, 0, 2, 1)
+
+        self._hbox = Gtk.Box(Gtk.Orientation.HORIZONTAL, 12)
+        self._hbox.set_homogeneous(True)
+        self._hbox.set_margin_top(6)
+        self._hbox.set_margin_right(6)
+        self._hbox.set_margin_left(6)
+        self._hbox.set_margin_bottom(6)
+        self._hbox.set_halign(Gtk.Align.FILL)
+        self._hbox.set_valign(Gtk.Align.FILL)
+        self._hbox.set_hexpand(True)
+        self._hbox.set_vexpand(True)
+        grid.attach(self._hbox, 0, 1, 2, 1)
+
+        self._treestore = Gtk.TreeStore(GObject.TYPE_INT,
+                                        GObject.TYPE_STRING,
+                                        GObject.TYPE_STRING,
+                                        GObject.TYPE_STRING)
+        self._treeview = Gtk.TreeView.new_with_model(self._treestore)
+        self._treeview.get_selection().connect('changed', self.cb_treeselection_changed)
+        def append_column(tv, col, name=None):
+            tvcolumn = Gtk.TreeViewColumn(name)
+            tv.append_column(tvcolumn)
+            cell = Gtk.CellRendererText()
+            tvcolumn.pack_start(cell, True)
+            tvcolumn.add_attribute(cell, 'text', col)
+        append_column(self._treeview, 2, _("Name"))
+        append_column(self._treeview, 3, _("Status"))
+
+        scrolledwindow_circuits = Gtk.ScrolledWindow()
+        scrolledwindow_circuits.add(self._treeview)
+        self._hbox.pack_start(scrolledwindow_circuits, expand=True, fill=True, padding=0)
+
+        self._path = Gtk.Label(_("Click on a path to get details"))
+        self._hbox.pack_start(self._path, expand=True, fill=True, padding=0)
+
+        self.show_all()
+
+    def init_listeners(self):
+        if not self._listeners_initialized:
+            self.controller.add_event_listener(self.update_circ_cb,
+                    stem.control.EventType.CIRC)
+            self.controller.add_event_listener(self.update_stream_cb,
+                    stem.control.EventType.STREAM)
+            self.controller.add_status_listener(self.update_status_cb)
+        self._listeners_initialized = True
+
+    def update_status_cb(self, controller, state, timestamp):
+        if state == stem.control.State.CLOSED:
+            GLib.idle_add(self.connection_closed_cb)
+            GLib.timeout_add_seconds(1, self.controller_reconnect_cb)
+        elif state == stem.control.State.INIT:
+            GLib.idle_add(self.connection_init_cb)
+
+    def connection_closed_cb(self):
+        logging.debug("Controller connection closed")
+        self._hbox.set_sensitive(False)
+        self._infobar_label.set_text(_("Lost connection to the Tor daemon. "
+                                       "Tor Monitor will try to reconnect..."))
+        self._infobar.set_message_type(Gtk.MessageType.ERROR)
+        self._infobar.show()
+        return False
+
+    def connection_init_cb(self):
+        logging.debug("Controller initialized")
+        self._hbox.set_sensitive(True)
+        self._infobar_label.set_text(_("Reconnected to the Tor daemon! "
+                                       "You can use Tor Monitor again."))
+        self._infobar.set_message_type(Gtk.MessageType.INFO)
+        self._infobar.show()
+        self.init_listeners()
+        self.populate_treeview()
+
+        return False
+
+    def controller_reconnect_cb(self):
+        logging.debug("Trying to reconnect the controller")
+        try:
+            self.controller.connect()
+            self.controller.authenticate()
+        except stem.SocketError:
+            return True
+        self.connection_init_cb()
+        return False
+
+    def controller_connect_cb(self):
+        logging.debug("Trying to connect the controller")
+        controller = self.get_application().connect_controller()
+        if controller:
+            self.controller = controller
+            self.connection_init_cb()
+            return False
+        else:
+            return True
+
+    def delete_event_cb(self, widget, event, data=None):
+        logging.info("quitting, waiting all threads to return...")
+        self.hide()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
+        return False
+
+    # CRICUITS AND STREAMS LIST
+    # =========================
+
+    @staticmethod
+    def circuit_label(circuit):
+        if circuit.path:
+            circ_str = ' '.join([nick for fp, nick in circuit.path])
+        else:
+            circ_str = _("Building...")
+        return circ_str
+
+    @staticmethod
+    def stream_label(stream):
+        return "%s" % stream.target
+
+    def add_circuit(self, circuit):
+        circ_iter = self._treestore.append(None,
+                        [self.TYPE_CIRC,
+                        circuit.id,
+                        self.circuit_label(circuit),
+                        str(circuit.status).lower()])
+        self._circ_to_iter[circuit.id] = circ_iter
+        return circ_iter
+
+    def add_circuit_cb(self, circuit):
+        self.add_circuit(circuit)
+        return False
+
+    def update_circuit(self, circuit):
+        logging.debug("updating circuit %s" % circuit)
+        if circuit.reason:
+            status = _("%s: %s") % (str(circuit.status).lower(),
+                                    str(circuit.reason).lower())
+        else:
+            status = str(circuit.status).lower()
+        self._treestore.set(
+            self._circ_to_iter[circuit.id],
+            2, self.circuit_label(circuit),
+            3, status)
+
+    def remove_circuit(self, circuit):
+        self._treestore.remove(self._circ_to_iter[circuit.id])
+        del self._circ_to_iter[circuit.id]
+        return False # to cancel the repetition when using in timeout_add
+
+    def update_circ_cb(self, circ_event):
+        if circ_event.id not in self._circ_to_iter:
+            GLib.idle_add(self.add_circuit_cb, circ_event)
+        else:
+            GLib.idle_add(self.update_circuit, circ_event)
+            if (circ_event.status == stem.CircStatus.FAILED
+                or circ_event.status == stem.CircStatus.CLOSED):
+                GLib.timeout_add_seconds(5, self.remove_circuit, circ_event)
+
+    def add_stream(self, stream):
+        if not stream.circ_id:
+            return None
+        circ_iter = self._circ_to_iter[stream.circ_id]
+        if not circ_iter:
+            logging.warn("No iter found for %s" % circ_id)
+            circ_iter = self.add_circuit(self.controller.get_circuit(circ_id))
+        stream_iter = self._treestore.append(circ_iter,
+                    [self.TYPE_STREAM,
+                    stream.id,
+                    self.stream_label(stream),
+                    str(stream.status).lower()])
+        self._stream_to_iter[stream.id] = stream_iter
+        self._treeview.expand_to_path(self._treestore.get_path(stream_iter))
+        return stream_iter
+
+    def add_stream_cb(self, stream):
+        self.add_stream(stream)
+        return False
+
+    def update_stream(self, stream):
+        stream_iter = self._stream_to_iter[stream.id]
+        # If the stream changed circuit, reparent it
+        if stream.circ_id != self._treestore.get_value(stream_iter, 1):
+            self.remove_stream(stream)
+            stream_iter = self.add_stream(stream)
+        self._treestore.set(stream_iter, 2, self.stream_label(stream))
+        if stream.status:
+            self._treestore.set(stream_iter, 3, str(stream.status).lower())
+
+    def remove_stream(self, stream):
+        self._treestore.remove(self._stream_to_iter[stream.id])
+        del self._stream_to_iter[stream.id]
+        return False # to cancel the repetition when using in timeout_add
+
+    def update_stream_cb(self, stream_event):
+        if stream_event.id not in self._stream_to_iter:
+            GLib.idle_add(self.add_stream_cb, stream_event)
+        else:
+            GLib.idle_add(self.update_stream, stream_event)
+            if (stream_event.status == stem.StreamStatus.FAILED
+                or stream_event.status == stem.StreamStatus.CLOSED):
+                GLib.timeout_add_seconds(5, self.remove_stream, stream_event)
+
+    def populate_treeview(self, data=None):
+        self._treestore.clear()
+        self._circ_to_iter = {}
+        self._stream_to_iter = {}
+
+        for c in self.controller.get_circuits():
+            self.add_circuit(c)
+        for s in self.controller.get_streams():
+            self.add_stream(s)
+        self._treeview.expand_all()
+        return True
+
+    # CRICUIT DETAILS
+    # ===============
+
+    def cb_treeselection_changed(self, treeselection, data=None):
+        (model, selected_iter) = treeselection.get_selected()
+        if not selected_iter:
+            return False
+
+        if model.get_value(selected_iter, 0) == self.TYPE_STREAM: # Stream
+            circuit_iter = model.iter_parent(selected_iter)
+        else: # Circuit
+            circuit_iter = selected_iter
+
+        circ_id = model.get_value(circuit_iter, 1)
+        try:
+            circuit = self.controller.get_circuit(circ_id)
+        except ValueError, e: # The circuit doesn't exist anymore
+            logging.debug("circuit %i not known by Tor: %s" % (circ_id, e))
+            return False
+        self.show_circuit_details(circuit)
+        return False
+
+    def download_descriptors(self, path):
+        descriptors = {}
+        for desc in self.get_application().get_downloader().get_server_descriptors(
+                [fp for fp, nick in path], timeout=10):
+            descriptors[desc.fingerprint] = desc
+        GLib.idle_add(self.descriptor_downloaded_cb,
+                [descriptors[fp] for fp, nick in path])
+
+    def descriptor_downloaded_cb(self, descriptors):
+        # Replace the old content of _path by a fresh ListBox.
+        self._path.destroy()
+        self._path = Gtk.ListBox()
+        self._hbox.pack_start(self._path, expand=True, fill=True, padding=0)
+
+        # Display the nodes descriptors.
+        for desc in descriptors:
+            self.display_node(desc)
+        self._path.show_all()
+
+        return False
+
+    def show_circuit_details(self, circuit):
+        logging.debug("looking up details for %s" % circuit)
+
+        # Replace the old content of _path by a spinner and a label while we're
+        # downloading descriptors.
+        self._path.destroy()
+        self._path = Gtk.Grid()
+        spinner = Gtk.Spinner()
+        spinner.start()
+        spinner.set_size_request(48, 48)
+        spinner.set_halign(Gtk.Align.CENTER)
+        spinner.set_valign(Gtk.Align.END)
+        spinner.set_hexpand(True)
+        spinner.set_vexpand(True)
+        self._path.attach(spinner, 0, 0, 1, 1)
+        label = Gtk.Label(_("Downloading circuit details..."))
+        label.set_halign(Gtk.Align.CENTER)
+        label.set_valign(Gtk.Align.START)
+        label.set_hexpand(True)
+        label.set_vexpand(True)
+        self._path.attach(label, 0, 1, 1, 1)
+        self._path.show_all()
+        self._hbox.pack_start(self._path, expand=True, fill=True, padding=0)
+
+        # Launch descriptors download
+        threading.Thread(target=self.download_descriptors,
+                         args=[circuit.path]
+                        ).start()
+
+    def display_node(self, desc):
+        country = self.controller.get_info("ip-to-country/%s" % desc.address)
+        if pycountry:
+            country = pycountry.countries.get(alpha2=country.upper()).name
+
+        uptime = datetime.timedelta(seconds = desc.uptime)
+
+        grid = Gtk.Grid()
+        grid.set_property('row-spacing', 6)
+        grid.set_property('column-spacing', 12)
+        grid.set_property('margin', 12)
+
+        title = Gtk.Label()
+        title.set_markup("<b>%s</b>" % desc.nickname)
+        title.set_halign(Gtk.Align.START)
+        grid.attach(title, 0, 0, 2, 1)
+
+        line = 1
+        for l, v in [(_("Fingerprint:"), desc.fingerprint),
+                     (_("Published:"), desc.published),
+                     (_("IP:"), _("%s (%s)") % (desc.address, country)),
+                     (_("Platform:"), desc.platform),
+                     (_("Uptime:"), uptime)]:
+            label = Gtk.Label(l)
+            label.set_halign(Gtk.Align.START)
+            grid.attach(label, 0, line, 1, 1)
+            value = Gtk.Label(v)
+            value.set_halign(Gtk.Align.START)
+            grid.attach(value, 1, line, 1, 1)
+            line += 1
+
+        self._path.add(grid)
+        grid.show_all()
+
+class TorMonitorApplication(Gtk.Application):
+
+    def __init__(self):
+        Gtk.Application.__init__(self)
+
+        self.connect_controller()
+
+        # Initialise the downloader in the background
+        self._downloader = None
+        self._downloader_thread = threading.Thread(target=self.create_downloader)
+        self._downloader_thread.start()
+
+    def connect_controller(self):
+        self.controller = stem.connection.connect_socket_file()
+        return self.controller
+
+    def get_downloader(self):
+        # If the downloader is not ready, join its initialisation thread to the caller's
+        if not self._downloader:
+            logging.debug("downloader not ready, joining threads")
+            self._downloader_thread.join()
+        return self._downloader
+
+    def create_downloader(self):
+        self._downloader = stem.descriptor.remote.DescriptorDownloader(use_mirrors = True)
+
+    def do_activate(self):
+        win = TorMonitorWindow(self)
+        win.show_all()
+
+    def do_startup(self):
+        Gtk.Application.do_startup(self)
+
+app = TorMonitorApplication()
+exit_status = app.run(sys.argv)
+sys.exit(exit_status)

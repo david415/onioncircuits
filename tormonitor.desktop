@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Tor Monitor
+Comment=Display Tor circuits and streams
+TryExec=tormonitor
+Exec=tormonitor
+StartupNotify=true
+Terminal=false
+Type=Application
+Icon=tormonitor
+Categories=GTK;Network;
