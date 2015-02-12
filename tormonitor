@@ -20,6 +20,7 @@ import datetime
 import gettext
 import logging
 import os
+import socket
 import threading
 import sys
 
@@ -32,6 +33,8 @@ import stem
 import stem.connection
 import stem.control
 import stem.descriptor.remote
+
+import socks
 
 from gi.repository import (GLib,
                            GObject,
@@ -419,6 +422,8 @@ class TorMonitorApplication(Gtk.Application):
 
         # Initialise the downloader in the background
         self._downloader = None
+        socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050)
+        socket.socket = socks.socksocket
         self._downloader_thread = threading.Thread(target=self.create_downloader)
         self._downloader_thread.start()
 

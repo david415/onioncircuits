@@ -5,13 +5,14 @@ Dependencies
 ============
 
 Tor Monitor depends on python (>= 2.7), python-gi (>= 1.42), python-stem
-(>= 1.2.2), Gtk GIR (>= 3.14), GLib GIR (>= 1.42).
+(>= 1.2.2), python-pysocks (>= 1.5), Gtk GIR (>= 3.14), GLib GIR (>= 1.42).
 
 It recommends pycountry (>= 1.8).
 
 On Debian system (>= 8.0), these can be installed with:
 
-    apt-get install python-gi python-stem python-pycountry gir1.2-gtk-3.0 gir1.2-glib-2.0
+    apt-get install python-gi python-stem python-pycountry python-pysocks \
+         gir1.2-gtk-3.0 gir1.2-glib-2.0
 
 Installation
 ============
