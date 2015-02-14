@@ -330,12 +330,13 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         return False
 
     def download_descriptors(self, path):
-        descriptors = {}
-        for desc in self.get_application().get_downloader().get_server_descriptors(
-                [fp for fp, nick in path], timeout=10):
-            descriptors[desc.fingerprint] = desc
+        descs = {}
+        desc_query = self.get_application().get_server_descriptors(
+                    [fp for fp, nick in path])
+        for d in desc_query.run():
+            descs[d.fingerprint] = d
         GLib.idle_add(self.descriptor_downloaded_cb,
-                [descriptors[fp] for fp, nick in path])
+                [descs[fp] for fp, nick in path if descs.has_key(fp)])
 
     def descriptor_downloaded_cb(self, descriptors):
         # Replace the old content of _path by a fresh ListBox.
@@ -423,7 +424,6 @@ class TorMonitorApplication(Gtk.Application):
         # Initialise the downloader in the background
         self._downloader = None
         socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050)
-        socket.socket = socks.socksocket
         self._downloader_thread = threading.Thread(target=self.create_downloader)
         self._downloader_thread.start()
 
@@ -431,15 +431,35 @@ class TorMonitorApplication(Gtk.Application):
         self.controller = stem.connection.connect_socket_file()
         return self.controller
 
-    def get_downloader(self):
+    @staticmethod
+    def _socks_proxy_wrap(func, *args, **kwargs):
+        e = None
+        try:
+            # Use SOCKS proxied socket for the descriptor downloader initialization
+            real_socket = socket.socket
+            socket.socket = socks.socksocket
+            ret = func(*args, **kwargs)
+        except Exception, e:
+            pass
+        finally:
+            # Restore the original socket
+            socket.socket = real_socket
+        if e:
+            raise
+        else:
+            return ret
+
+    def get_server_descriptors(self, fingerprints):
         # If the downloader is not ready, join its initialisation thread to the caller's
         if not self._downloader:
             logging.debug("downloader not ready, joining threads")
             self._downloader_thread.join()
-        return self._downloader
+        return self._socks_proxy_wrap(
+                self._downloader.get_server_descriptors, fingerprints)
 
     def create_downloader(self):
-        self._downloader = stem.descriptor.remote.DescriptorDownloader(use_mirrors = True)
+        self._downloader = self._socks_proxy_wrap(
+                stem.descriptor.remote.DescriptorDownloader, use_mirrors=True)
 
     def do_activate(self):
         win = TorMonitorWindow(self)
