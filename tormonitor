@@ -34,8 +34,6 @@ import stem.connection
 import stem.control
 import stem.descriptor.remote
 
-import socks
-
 from gi.repository import (GLib,
                            GObject,
                            Gtk)
@@ -329,63 +327,23 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self.show_circuit_details(circuit)
         return False
 
-    def download_descriptors(self, path):
-        descs = {}
-        desc_query = self.get_application().get_server_descriptors(
-                    [fp for fp, nick in path])
-        for d in desc_query.run():
-            descs[d.fingerprint] = d
-        GLib.idle_add(self.descriptor_downloaded_cb,
-                [descs[fp] for fp, nick in path if descs.has_key(fp)])
+    def show_circuit_details(self, circuit):
+        logging.debug("looking up details for %s" % circuit)
 
-    def descriptor_downloaded_cb(self, descriptors):
         # Replace the old content of _path by a fresh ListBox.
         self._path.destroy()
         self._path = Gtk.ListBox()
         self._hbox.pack_start(self._path, expand=True, fill=True, padding=0)
 
-        # Display the nodes descriptors.
-        for desc in descriptors:
-            self.display_node(desc)
+        for fp in [fp for fp, nick in circuit.path]:
+            self.display_node(self.controller.get_network_status(fp))
+
         self._path.show_all()
 
-        return False
-
-    def show_circuit_details(self, circuit):
-        logging.debug("looking up details for %s" % circuit)
-
-        # Replace the old content of _path by a spinner and a label while we're
-        # downloading descriptors.
-        self._path.destroy()
-        self._path = Gtk.Grid()
-        spinner = Gtk.Spinner()
-        spinner.start()
-        spinner.set_size_request(48, 48)
-        spinner.set_halign(Gtk.Align.CENTER)
-        spinner.set_valign(Gtk.Align.END)
-        spinner.set_hexpand(True)
-        spinner.set_vexpand(True)
-        self._path.attach(spinner, 0, 0, 1, 1)
-        label = Gtk.Label(_("Downloading circuit details..."))
-        label.set_halign(Gtk.Align.CENTER)
-        label.set_valign(Gtk.Align.START)
-        label.set_hexpand(True)
-        label.set_vexpand(True)
-        self._path.attach(label, 0, 1, 1, 1)
-        self._path.show_all()
-        self._hbox.pack_start(self._path, expand=True, fill=True, padding=0)
-
-        # Launch descriptors download
-        threading.Thread(target=self.download_descriptors,
-                         args=[circuit.path]
-                        ).start()
-
-    def display_node(self, desc):
-        country = self.controller.get_info("ip-to-country/%s" % desc.address)
+    def display_node(self, status_entry):
+        country = self.controller.get_info("ip-to-country/%s" % status_entry.address)
         if pycountry:
             country = pycountry.countries.get(alpha2=country.upper()).name
-
-        uptime = datetime.timedelta(seconds = desc.uptime)
 
         grid = Gtk.Grid()
         grid.set_property('row-spacing', 6)
@@ -393,16 +351,16 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         grid.set_property('margin', 12)
 
         title = Gtk.Label()
-        title.set_markup("<b>%s</b>" % desc.nickname)
+        title.set_markup("<b>%s</b>" % status_entry.nickname)
         title.set_halign(Gtk.Align.START)
         grid.attach(title, 0, 0, 2, 1)
 
         line = 1
-        for l, v in [(_("Fingerprint:"), desc.fingerprint),
-                     (_("Published:"), desc.published),
-                     (_("IP:"), _("%s (%s)") % (desc.address, country)),
-                     (_("Platform:"), desc.platform),
-                     (_("Uptime:"), uptime)]:
+        for l, v in [(_("Fingerprint:"), status_entry.fingerprint),
+                     (_("Published:"), status_entry.published),
+                     (_("IP:"), _("%s (%s)") % (status_entry.address, country)),
+                     (_("Bandwidth:"), _("%.2f Mb/s") % (status_entry.bandwidth/1024.)),
+                    ]:
             label = Gtk.Label(l)
             label.set_halign(Gtk.Align.START)
             grid.attach(label, 0, line, 1, 1)
@@ -421,45 +379,9 @@ class TorMonitorApplication(Gtk.Application):
 
         self.connect_controller()
 
-        # Initialise the downloader in the background
-        self._downloader = None
-        socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050)
-        self._downloader_thread = threading.Thread(target=self.create_downloader)
-        self._downloader_thread.start()
-
     def connect_controller(self):
         self.controller = stem.connection.connect_socket_file()
         return self.controller
-
-    @staticmethod
-    def _socks_proxy_wrap(func, *args, **kwargs):
-        e = None
-        try:
-            # Use SOCKS proxied socket for the descriptor downloader initialization
-            real_socket = socket.socket
-            socket.socket = socks.socksocket
-            ret = func(*args, **kwargs)
-        except Exception, e:
-            pass
-        finally:
-            # Restore the original socket
-            socket.socket = real_socket
-        if e:
-            raise
-        else:
-            return ret
-
-    def get_server_descriptors(self, fingerprints):
-        # If the downloader is not ready, join its initialisation thread to the caller's
-        if not self._downloader:
-            logging.debug("downloader not ready, joining threads")
-            self._downloader_thread.join()
-        return self._socks_proxy_wrap(
-                self._downloader.get_server_descriptors, fingerprints)
-
-    def create_downloader(self):
-        self._downloader = self._socks_proxy_wrap(
-                stem.descriptor.remote.DescriptorDownloader, use_mirrors=True)
 
     def do_activate(self):
         win = TorMonitorWindow(self)
