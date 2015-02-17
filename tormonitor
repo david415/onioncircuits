@@ -328,7 +328,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         try:
             circuit = self.controller.get_circuit(circ_id)
         except ValueError, e: # The circuit doesn't exist anymore
-            logging.debug("circuit %i not known by Tor: %s" % (circ_id, e))
+            logging.debug("circuit %s not known by Tor: %s" % (circ_id, e))
             return False
         self.show_circuit_details(circuit)
         return False
