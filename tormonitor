@@ -273,13 +273,17 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
     def update_stream(self, stream):
         stream_iter = self._stream_to_iter[stream.id]
-        # If the stream changed circuit, reparent it
         if stream.circ_id != self._treestore.get_value(stream_iter, 1):
+            # The stream doesn't belong its parent circuit anymore. Remove it.
             self.remove_stream(stream)
-            stream_iter = self.add_stream(stream)
-        self._treestore.set(stream_iter, 2, self.stream_label(stream))
-        if stream.status:
-            self._treestore.set(stream_iter, 3, str(stream.status).lower())
+            if stream.circ_id:
+                # The stream has a new circuit, add it with its new parent.
+                stream_iter = self.add_stream(stream)
+        else:
+            # The stream didn't change parent. Update it.
+            self._treestore.set(stream_iter, 2, self.stream_label(stream))
+            if stream.status:
+                self._treestore.set(stream_iter, 3, str(stream.status).lower())
 
     def remove_stream(self, stream):
         self._treestore.remove(self._stream_to_iter[stream.id])
