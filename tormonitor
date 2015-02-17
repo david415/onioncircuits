@@ -214,6 +214,16 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     # CRICUITS AND STREAMS LIST
     # =========================
 
+    def remove_treeiter(self, treeiter):
+        if self._treestore.iter_is_valid(treeiter):
+            self._treestore.remove(treeiter)
+        else:
+            # It may happen that the treeiter is not valid anymore
+            # e.g. because it represents a stream that has been remapped
+            # to another circuit.
+            logging.debug("cannot remove %s which is not valid")
+        return False # to cancel the repetition when used in timeout_add
+
     # Circuits
     # --------
 
@@ -249,7 +259,11 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     def remove_circuit(self, circuit):
         self._treestore.remove(self._circ_to_iter[circuit.id])
         del self._circ_to_iter[circuit.id]
-        return False # to cancel the repetition when using in timeout_add
+
+    def remove_circuit_delayed(self, circuit):
+        circ_iter = self._circ_to_iter[circuit.id]
+        del self._circ_to_iter[circuit.id]
+        GLib.timeout_add_seconds(5, self.remove_treeiter, circ_iter)
 
     def update_circ_cb(self, circ_event):
         if circ_event.id not in self._circ_to_iter:
@@ -257,8 +271,8 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         else:
             self.update_circuit(circ_event)
             if (circ_event.status == stem.CircStatus.FAILED
-                or circ_event.status == stem.CircStatus.CLOSED):
-                GLib.timeout_add_seconds(5, self.remove_circuit, circ_event)
+                    or circ_event.status == stem.CircStatus.CLOSED):
+                self.remove_circuit_delayed(circ_event)
 
     # Streams
     # -------
@@ -300,7 +314,12 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     def remove_stream(self, stream):
         self._treestore.remove(self._stream_to_iter[stream.id])
         del self._stream_to_iter[stream.id]
-        return False # to cancel the repetition when using in timeout_add
+
+    def remove_stream_delayed(self, stream):
+        stream_iter = self._stream_to_iter[stream.id]
+        if stream_iter:
+            del self._stream_to_iter[stream.id]
+            GLib.timeout_add_seconds(5, self.remove_treeiter, stream_iter)
 
     def update_stream_cb(self, stream_event):
         if stream_event.id not in self._stream_to_iter:
@@ -308,8 +327,9 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         else:
             self.update_stream(stream_event)
             if (stream_event.status == stem.StreamStatus.FAILED
-                or stream_event.status == stem.StreamStatus.CLOSED):
-                GLib.timeout_add_seconds(5, self.remove_stream, stream_event)
+                    or stream_event.status == stem.StreamStatus.CLOSED
+                    or stream_event.status == stem.StreamStatus.DETACHED):
+                self.remove_stream_delayed(stream_event)
 
     def populate_treeview(self, data=None):
         self._treestore.clear()
