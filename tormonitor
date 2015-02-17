@@ -131,6 +131,16 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
         self.show_all()
 
+    def delete_event_cb(self, widget, event, data=None):
+        logging.info("quitting, waiting all threads to return...")
+        self.hide()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
+        return False
+
+    # TOR CONTROL LISTENERS
+    # =====================
+
     def init_listeners(self):
         # Connect our handlers to Tor event listeners. Our handlers won't be
         # executed in the main thread.
@@ -156,6 +166,9 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             GLib.timeout_add_seconds(1, self.controller_reconnect_cb)
         elif state == stem.control.State.INIT:
             GLib.idle_add(self.connection_init_cb)
+
+    # RECONNECTION MANAGEMENT
+    # =======================
 
     def connection_closed_cb(self):
         logging.debug("Controller connection closed")
@@ -198,15 +211,11 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         else:
             return True
 
-    def delete_event_cb(self, widget, event, data=None):
-        logging.info("quitting, waiting all threads to return...")
-        self.hide()
-        while Gtk.events_pending():
-            Gtk.main_iteration()
-        return False
-
     # CRICUITS AND STREAMS LIST
     # =========================
+
+    # Circuits
+    # --------
 
     @staticmethod
     def circuit_label(circuit):
@@ -215,10 +224,6 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         else:
             circ_str = _("Building...")
         return circ_str
-
-    @staticmethod
-    def stream_label(stream):
-        return "%s" % stream.target
 
     def add_circuit(self, circuit):
         circ_iter = self._treestore.append(None,
@@ -254,6 +259,13 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             if (circ_event.status == stem.CircStatus.FAILED
                 or circ_event.status == stem.CircStatus.CLOSED):
                 GLib.timeout_add_seconds(5, self.remove_circuit, circ_event)
+
+    # Streams
+    # -------
+
+    @staticmethod
+    def stream_label(stream):
+        return "%s" % stream.target
 
     def add_stream(self, stream):
         if not stream.circ_id:
