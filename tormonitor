@@ -132,15 +132,25 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self.show_all()
 
     def init_listeners(self):
+        # Connect our handlers to Tor event listeners. Our handlers won't be
+        # executed in the main thread.
         if not self._listeners_initialized:
-            self.controller.add_event_listener(self.update_circ_cb,
+            self.controller.add_event_listener(self.update_circ_handler,
                     stem.control.EventType.CIRC)
-            self.controller.add_event_listener(self.update_stream_cb,
+            self.controller.add_event_listener(self.update_stream_handler,
                     stem.control.EventType.STREAM)
-            self.controller.add_status_listener(self.update_status_cb)
+            self.controller.add_status_listener(self.update_status_handler)
         self._listeners_initialized = True
 
-    def update_status_cb(self, controller, state, timestamp):
+    def update_circ_handler(self, circ_event):
+        # Handle the event in main thread
+        GLib.idle_add(self.update_circ_cb, circ_event)
+
+    def update_stream_handler(self, stream_event):
+        # Handle the event in main thread
+        GLib.idle_add(self.update_stream_cb, stream_event)
+
+    def update_status_handler(self, controller, state, timestamp):
         if state == stem.control.State.CLOSED:
             GLib.idle_add(self.connection_closed_cb)
             GLib.timeout_add_seconds(1, self.controller_reconnect_cb)
@@ -219,10 +229,6 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._circ_to_iter[circuit.id] = circ_iter
         return circ_iter
 
-    def add_circuit_cb(self, circuit):
-        self.add_circuit(circuit)
-        return False
-
     def update_circuit(self, circuit):
         logging.debug("updating circuit %s" % circuit)
         if circuit.reason:
@@ -242,9 +248,9 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
     def update_circ_cb(self, circ_event):
         if circ_event.id not in self._circ_to_iter:
-            GLib.idle_add(self.add_circuit_cb, circ_event)
+            self.add_circuit(circ_event)
         else:
-            GLib.idle_add(self.update_circuit, circ_event)
+            self.update_circuit(circ_event)
             if (circ_event.status == stem.CircStatus.FAILED
                 or circ_event.status == stem.CircStatus.CLOSED):
                 GLib.timeout_add_seconds(5, self.remove_circuit, circ_event)
@@ -265,10 +271,6 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._treeview.expand_to_path(self._treestore.get_path(stream_iter))
         return stream_iter
 
-    def add_stream_cb(self, stream):
-        self.add_stream(stream)
-        return False
-
     def update_stream(self, stream):
         stream_iter = self._stream_to_iter[stream.id]
         # If the stream changed circuit, reparent it
@@ -286,9 +288,9 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
     def update_stream_cb(self, stream_event):
         if stream_event.id not in self._stream_to_iter:
-            GLib.idle_add(self.add_stream_cb, stream_event)
+            self.add_stream(stream_event)
         else:
-            GLib.idle_add(self.update_stream, stream_event)
+            self.update_stream(stream_event)
             if (stream_event.status == stem.StreamStatus.FAILED
                 or stream_event.status == stem.StreamStatus.CLOSED):
                 GLib.timeout_add_seconds(5, self.remove_stream, stream_event)
