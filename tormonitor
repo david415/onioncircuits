@@ -21,7 +21,6 @@ import gettext
 import logging
 import os
 import socket
-import threading
 import sys
 
 try:
@@ -32,7 +31,6 @@ except ImportError:
 import stem
 import stem.connection
 import stem.control
-import stem.descriptor.remote
 
 from gi.repository import (GLib,
                            GObject,
