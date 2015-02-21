@@ -117,7 +117,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             cell = Gtk.CellRendererText()
             tvcolumn.pack_start(cell, True)
             tvcolumn.add_attribute(cell, 'text', col)
-        append_column(self._treeview, 2, _("Name"))
+        append_column(self._treeview, 2, _("Path"))
         append_column(self._treeview, 3, _("Status"))
 
         scrolledwindow_circuits = Gtk.ScrolledWindow()
