@@ -338,7 +338,8 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
         :var stem.response.events.CircuitEvent circuit: the circuit
         """
-        self._treestore.remove(self._circ_to_iter[circuit.id])
+
+        self.remove_treeiter(self._circ_to_iter[circuit.id])
         del self._circ_to_iter[circuit.id]
 
     def remove_circuit_delayed(self, circuit):
@@ -424,7 +425,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
         :var stem.response.events.StreamEvent stream: the stream
         """
-        self._treestore.remove(self._stream_to_iter[stream.id])
+        self.remove_treeiter(self._stream_to_iter[stream.id])
         del self._stream_to_iter[stream.id]
 
     def remove_stream_delayed(self, stream):
