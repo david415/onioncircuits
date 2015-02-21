@@ -44,12 +44,20 @@ else:
     logging.getLogger('stem').setLevel(logging.WARNING)
 
 class TorMonitorWindow(Gtk.ApplicationWindow):
+    """Tor Monitor main window
+
+    This class contains all the UI and the logic to update.
+    """
 
     # Constants used to distinguish circuits and streams in our TreeStore
     TYPE_CIRC = 0
     TYPE_STREAM = 1
 
     def __init__(self, app):
+        """Create a new TorMonitorWindow
+
+        :var Gtk.Application app: the application which own the window
+        """
         Gtk.Window.__init__(self, application=app)
 
         self._listeners_initialized = False
@@ -71,6 +79,8 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             self._infobar.show()
 
     def _create_ui(self):
+        """Creates the user interface
+        """
         self.set_default_size(600, 400)
         self.set_icon_name('tormonitor')
         self.connect('delete-event', self.delete_event_cb)
@@ -130,6 +140,11 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self.show_all()
 
     def delete_event_cb(self, widget, event, data=None):
+        """Hide the window immediately on close.
+
+        This callback is connected to window's 'delete-event' and forces Gtk to
+        hide the window while waiting for all threads to close.
+        """
         logging.info("quitting, waiting all threads to return...")
         self.hide()
         while Gtk.events_pending():
@@ -140,8 +155,11 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     # =====================
 
     def init_listeners(self):
-        # Connect our handlers to Tor event listeners. Our handlers won't be
-        # executed in the main thread.
+        """Connect our handlers to Tor event listeners
+        """
+        # These handlers won't be executed in the main thread, they will have to
+        # do the real work in another method executed in the main thread by
+        # GLib.idle_add in order not to make Gtk crazy.
         if not self._listeners_initialized:
             self.controller.add_event_listener(self.update_circ_handler,
                     stem.control.EventType.CIRC)
@@ -151,14 +169,20 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._listeners_initialized = True
 
     def update_circ_handler(self, circ_event):
+        """Handler for stem.control.EventType.CIRC
+        """
         # Handle the event in main thread
         GLib.idle_add(self.update_circ_cb, circ_event)
 
     def update_stream_handler(self, stream_event):
+        """Handler for stem.control.EventType.STREAM
+        """
         # Handle the event in main thread
         GLib.idle_add(self.update_stream_cb, stream_event)
 
     def update_status_handler(self, controller, state, timestamp):
+        """Handler for stem.control.BaseController.add_status_listener
+        """
         if state == stem.control.State.CLOSED:
             GLib.idle_add(self.connection_closed_cb)
             GLib.timeout_add_seconds(1, self.controller_reconnect_cb)
@@ -169,15 +193,28 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     # =======================
 
     def connection_closed_cb(self):
+        """Update the UI after we lost conection to the Tor daemon
+
+        This callback is called when we lost connection with the Tor daemon.
+
+        :returns: **False**
+        """
         logging.debug("Controller connection closed")
         self._hbox.set_sensitive(False)
         self._infobar_label.set_text(_("Lost connection to the Tor daemon. "
                                        "Tor Monitor will try to reconnect..."))
         self._infobar.set_message_type(Gtk.MessageType.ERROR)
         self._infobar.show()
+        self._treestore.clear()
         return False
 
     def connection_init_cb(self):
+        """Update the UI after a (re)connection to the Tor daemon
+
+        This callback is called when we (re)connect to the Tor daemon.
+
+        :returns: **False**
+        """
         logging.debug("Controller initialized")
         self._hbox.set_sensitive(True)
         self._infobar_label.set_text(_("Reconnected to the Tor daemon! "
@@ -190,6 +227,16 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         return False
 
     def controller_reconnect_cb(self):
+        """Try to reconnect to the Tor daemon
+
+        This callback is called regularly by self.update_status_handler if the
+        connection to the Tor daemon is lost. It calls self.connection_init_cb
+        after a successful reconnection.
+
+        :returns: **bool** that's **False** if we reconnected successfully and
+        **True** if we failed to reconnect (so that GLib.timeout_add will call
+        the method again).
+        """
         logging.debug("Trying to reconnect the controller")
         try:
             self.controller.connect()
@@ -200,6 +247,16 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         return False
 
     def controller_connect_cb(self):
+        """Try to connect to the Tor daemon for the 1st time
+
+        This callback is called regularly by self.__init__ if there is no
+        connection to the Tor daemon at startup. It calls
+        self.connection_init_cb after a successful connection.
+
+        :returns: **bool** that's **False** if we connected successfully and
+        **True** if we failed to connect (so that GLib.timeout_add will call
+        the method again).
+        """
         logging.debug("Trying to connect the controller")
         controller = self.get_application().connect_controller()
         if controller:
@@ -213,6 +270,12 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     # =========================
 
     def remove_treeiter(self, treeiter):
+        """Remove a treeiter from our circuits/streams list if it is valid
+
+        :var Gtk.TreeIter treeiter: the treeiter to remove
+
+        :returns: **False**
+        """
         if self._treestore.iter_is_valid(treeiter):
             self._treestore.remove(treeiter)
         else:
@@ -227,6 +290,12 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
     @staticmethod
     def circuit_label(circuit):
+        """Returns a label for a circuit
+
+        :var stem.response.events.CircuitEvent circuit: the circuit
+
+        :returns: **str** representing the circuit
+        """
         if circuit.path:
             circ_str = _(', ').join([nick for fp, nick in circuit.path])
         else:
@@ -234,6 +303,12 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         return circ_str
 
     def add_circuit(self, circuit):
+        """Adds a circuit to our circuits/streams list
+
+        :var stem.response.events.CircuitEvent circuit: the circuit
+
+        :returns: the :class:`Gtk.TreeIter` corresponding to the circuit
+        """
         circ_iter = self._treestore.append(None,
                         [self.TYPE_CIRC,
                         circuit.id,
@@ -243,6 +318,10 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         return circ_iter
 
     def update_circuit(self, circuit):
+        """Updates a circuit in our circuits/streams list
+
+        :var stem.response.events.CircuitEvent circuit: the circuit
+        """
         logging.debug("updating circuit %s" % circuit)
         if circuit.reason:
             status = _("%s: %s") % (str(circuit.status).capitalize(),
@@ -255,15 +334,30 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             3, status)
 
     def remove_circuit(self, circuit):
+        """Remove a circuit from our circuits/streams list
+
+        :var stem.response.events.CircuitEvent circuit: the circuit
+        """
         self._treestore.remove(self._circ_to_iter[circuit.id])
         del self._circ_to_iter[circuit.id]
 
     def remove_circuit_delayed(self, circuit):
+        """Remove a circuit from our circuits/streams list after a delay
+
+        The delay gives the user time to read the reason of the removal.
+
+        :var stem.response.events.CircuitEvent circuit: the circuit
+        """
         circ_iter = self._circ_to_iter[circuit.id]
         del self._circ_to_iter[circuit.id]
         GLib.timeout_add_seconds(5, self.remove_treeiter, circ_iter)
 
     def update_circ_cb(self, circ_event):
+        """Updates the circuits/streams list in response to a the
+        :class:`stem.response.events.CircuitEvent`
+
+        :var stem.response.events.CircuitEvent circ_event: the circuit event
+        """
         if circ_event.id not in self._circ_to_iter:
             self.add_circuit(circ_event)
         else:
@@ -277,9 +371,21 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
     @staticmethod
     def stream_label(stream):
+        """Returns a label for a stream
+
+        :var stem.response.events.StreamEvent stream: the stream
+
+        :returns: **str** representing the stream
+        """
         return "%s" % stream.target
 
     def add_stream(self, stream):
+        """Adds a circuit to our circuits/streams list
+
+        :var stem.response.events.StreamEvent stream: the stream
+
+        :returns: the :class:`Gtk.TreeIter` corresponding to the stream
+        """
         if not stream.circ_id:
             return None
         circ_iter = self._circ_to_iter[stream.circ_id]
@@ -296,6 +402,10 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         return stream_iter
 
     def update_stream(self, stream):
+        """Updates a stream in our circuits/streams list
+
+        :var stem.response.events.StreamEvent stream: the stream
+        """
         stream_iter = self._stream_to_iter[stream.id]
         if stream.circ_id != self._treestore.get_value(stream_iter, 1):
             # The stream doesn't belong its parent circuit anymore. Remove it.
@@ -310,16 +420,31 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
                 self._treestore.set(stream_iter, 3, str(stream.status).capitalize())
 
     def remove_stream(self, stream):
+        """Remove a stream from our circuits/streams list
+
+        :var stem.response.events.StreamEvent stream: the stream
+        """
         self._treestore.remove(self._stream_to_iter[stream.id])
         del self._stream_to_iter[stream.id]
 
     def remove_stream_delayed(self, stream):
+        """Remove a stream from our circuits/streams list after a delay
+
+        The delay gives the user time to read the reason of the removal.
+
+        :var stem.response.events.StreamEvent stream: the stream
+        """
         stream_iter = self._stream_to_iter[stream.id]
         if stream_iter:
             del self._stream_to_iter[stream.id]
             GLib.timeout_add_seconds(5, self.remove_treeiter, stream_iter)
 
     def update_stream_cb(self, stream_event):
+        """Updates the circuits/streams list in response to a the
+        :class:`stem.response.events.StreamEvent`
+
+        :var stem.response.events.StreamEvent stream_event: the stream event
+        """
         if stream_event.id not in self._stream_to_iter:
             self.add_stream(stream_event)
         else:
@@ -330,6 +455,8 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
                 self.remove_stream_delayed(stream_event)
 
     def populate_treeview(self):
+        """Synchronize the circuits/streams list with the Tor daemon
+        """
         self._treestore.clear()
         self._circ_to_iter = {}
         self._stream_to_iter = {}
@@ -344,6 +471,14 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     # ===============
 
     def cb_treeselection_changed(self, treeselection, data=None):
+        """Handle selection change in the circuits/streams list
+
+        Display details for the circuit selected in the circuits/streams list
+
+        :var Gtk.TreeSelection treeselection: the selection
+
+        :returns: **True**
+        """
         (model, selected_iter) = treeselection.get_selected()
         if not selected_iter:
             return False
@@ -363,6 +498,10 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         return False
 
     def show_circuit_details(self, circuit):
+        """Display details for a circuit
+
+        :var stem.response.events.CircuitEvent circuit: the circuit
+        """
         logging.debug("looking up details for %s" % circuit)
 
         # Replace the old content of _path by a fresh ListBox.
@@ -376,6 +515,11 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._path.show_all()
 
     def display_node(self, status_entry):
+        """Display details for a node
+
+        :var stem.descriptor.router_status_entry.RouterStatusEntryMicroV3
+        status_entry: the status entry for the node
+        """
         country = self.controller.get_info("ip-to-country/%s" % status_entry.address)
         if pycountry:
             country = pycountry.countries.get(alpha2=country.upper()).name
@@ -408,6 +552,10 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         grid.show_all()
 
 class TorMonitorApplication(Gtk.Application):
+    """Tor Monitor application
+
+    :var stem.control.Controller controller: a controller to the Tor daemon
+    """
 
     def __init__(self):
         Gtk.Application.__init__(self)
@@ -415,6 +563,8 @@ class TorMonitorApplication(Gtk.Application):
         self.connect_controller()
 
     def connect_controller(self):
+        """Connects the controller to the Tor daemon.
+        """
         self.controller = stem.connection.connect_socket_file()
         return self.controller
 
