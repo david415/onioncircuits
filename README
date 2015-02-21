@@ -9,10 +9,12 @@ Tor Monitor depends on python (>= 2.7), python-gi (>= 1.42), python-stem
 
 It recommends pycountry (>= 1.8).
 
+Tor Monitor also build-depends on python-distutils-extra.
+
 On Debian system (>= 8.0), these can be installed with:
 
     apt-get install python-gi python-stem python-pycountry \
-         gir1.2-gtk-3.0 gir1.2-glib-2.0
+         python-distutils-extra gir1.2-gtk-3.0 gir1.2-glib-2.0
 
 Installation
 ============
