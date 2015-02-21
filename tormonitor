@@ -238,17 +238,17 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
                         [self.TYPE_CIRC,
                         circuit.id,
                         self.circuit_label(circuit),
-                        str(circuit.status).lower()])
+                        str(circuit.status).capitalize()])
         self._circ_to_iter[circuit.id] = circ_iter
         return circ_iter
 
     def update_circuit(self, circuit):
         logging.debug("updating circuit %s" % circuit)
         if circuit.reason:
-            status = _("%s: %s") % (str(circuit.status).lower(),
+            status = _("%s: %s") % (str(circuit.status).capitalize(),
                                     str(circuit.reason).lower())
         else:
-            status = str(circuit.status).lower()
+            status = str(circuit.status).capitalize()
         self._treestore.set(
             self._circ_to_iter[circuit.id],
             2, self.circuit_label(circuit),
@@ -290,7 +290,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
                     [self.TYPE_STREAM,
                     stream.id,
                     self.stream_label(stream),
-                    str(stream.status).lower()])
+                    str(stream.status).capitalize()])
         self._stream_to_iter[stream.id] = stream_iter
         self._treeview.expand_to_path(self._treestore.get_path(stream_iter))
         return stream_iter
@@ -307,7 +307,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             # The stream didn't change parent. Update it.
             self._treestore.set(stream_iter, 2, self.stream_label(stream))
             if stream.status:
-                self._treestore.set(stream_iter, 3, str(stream.status).lower())
+                self._treestore.set(stream_iter, 3, str(stream.status).capitalize())
 
     def remove_stream(self, stream):
         self._treestore.remove(self._stream_to_iter[stream.id])
