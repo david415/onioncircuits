@@ -329,7 +329,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
                     or stream_event.status == stem.StreamStatus.DETACHED):
                 self.remove_stream_delayed(stream_event)
 
-    def populate_treeview(self, data=None):
+    def populate_treeview(self):
         self._treestore.clear()
         self._circ_to_iter = {}
         self._stream_to_iter = {}
@@ -339,7 +339,6 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         for s in self.controller.get_streams():
             self.add_stream(s)
         self._treeview.expand_all()
-        return True
 
     # CRICUIT DETAILS
     # ===============
