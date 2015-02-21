@@ -228,7 +228,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     @staticmethod
     def circuit_label(circuit):
         if circuit.path:
-            circ_str = ' '.join([nick for fp, nick in circuit.path])
+            circ_str = _(', ').join([nick for fp, nick in circuit.path])
         else:
             circ_str = _("Building...")
         return circ_str
