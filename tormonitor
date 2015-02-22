@@ -105,11 +105,11 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._infobar.connect('response', lambda infobar, rid, data=None: self._infobar.hide())
         grid.attach(self._infobar, 0, 0, 2, 1)
 
-
-        self._treestore = Gtk.TreeStore(GObject.TYPE_INT,
-                                        GObject.TYPE_STRING,
-                                        GObject.TYPE_STRING,
-                                        GObject.TYPE_STRING)
+        # Circuits/streams list
+        self._treestore = Gtk.TreeStore(GObject.TYPE_INT,    # TYPE_CIRC or TYPE_STREAM
+                                        GObject.TYPE_STRING, # id
+                                        GObject.TYPE_STRING, # path
+                                        GObject.TYPE_STRING) # status
         self._treeview = Gtk.TreeView.new_with_model(self._treestore)
         self._treeview.get_selection().connect('changed', self.cb_treeselection_changed)
         def append_column(tv, col, name=None):
@@ -129,6 +129,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         scrolledwindow_circuits.set_property('valign', Gtk.Align.FILL)
         grid.attach(scrolledwindow_circuits, 0, 1, 1, 1)
 
+        # Circuit details
         self._path = Gtk.ListBox()
         self._path.set_selection_mode(Gtk.SelectionMode.NONE)
         placeholder = Gtk.Label(_("Click on a path to get details"))
