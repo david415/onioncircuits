@@ -72,7 +72,8 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             self.populate_treeview()
         else:
             GLib.timeout_add_seconds(1, self.controller_connect_cb)
-            self._hbox.set_sensitive(False)
+            self._path.set_sensitive(False)
+            self._treeview.set_sensitive(False)
             self._infobar_label.set_text(_("Cannot connect to the Tor daemon. "
                                            "Tor Monitor will try to reconnect..."))
             self._infobar.set_message_type(Gtk.MessageType.ERROR)
@@ -92,6 +93,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self.set_titlebar(headerbar)
 
         grid = Gtk.Grid()
+        grid.set_column_homogeneous(True)
         self.add(grid)
 
         self._infobar = Gtk.InfoBar()
@@ -103,17 +105,6 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._infobar.connect('response', lambda infobar, rid, data=None: self._infobar.hide())
         grid.attach(self._infobar, 0, 0, 2, 1)
 
-        self._hbox = Gtk.Box(Gtk.Orientation.HORIZONTAL, 12)
-        self._hbox.set_homogeneous(True)
-        self._hbox.set_margin_top(6)
-        self._hbox.set_margin_right(6)
-        self._hbox.set_margin_left(6)
-        self._hbox.set_margin_bottom(6)
-        self._hbox.set_halign(Gtk.Align.FILL)
-        self._hbox.set_valign(Gtk.Align.FILL)
-        self._hbox.set_hexpand(True)
-        self._hbox.set_vexpand(True)
-        grid.attach(self._hbox, 0, 1, 2, 1)
 
         self._treestore = Gtk.TreeStore(GObject.TYPE_INT,
                                         GObject.TYPE_STRING,
@@ -132,14 +123,22 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
         scrolledwindow_circuits = Gtk.ScrolledWindow()
         scrolledwindow_circuits.add(self._treeview)
-        self._hbox.pack_start(scrolledwindow_circuits, expand=True, fill=True, padding=0)
+        scrolledwindow_circuits.set_property('margin', 6)
+        scrolledwindow_circuits.set_property('expand', True)
+        scrolledwindow_circuits.set_property('halign', Gtk.Align.FILL)
+        scrolledwindow_circuits.set_property('valign', Gtk.Align.FILL)
+        grid.attach(scrolledwindow_circuits, 0, 1, 1, 1)
 
         self._path = Gtk.ListBox()
         self._path.set_selection_mode(Gtk.SelectionMode.NONE)
         placeholder = Gtk.Label(_("Click on a path to get details"))
         placeholder.show()
         self._path.set_placeholder(placeholder)
-        self._hbox.pack_start(self._path, expand=True, fill=True, padding=0)
+        self._path.set_property('margin', 6)
+        self._path.set_property('expand', True)
+        self._path.set_property('halign', Gtk.Align.FILL)
+        self._path.set_property('valign', Gtk.Align.FILL)
+        grid.attach(self._path, 1, 1, 1, 1)
 
         self.show_all()
 
@@ -204,7 +203,8 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         :returns: **False**
         """
         logging.debug("Controller connection closed")
-        self._hbox.set_sensitive(False)
+        self._path.set_sensitive(False)
+        self._treeview.set_sensitive(False)
         self._infobar_label.set_text(_("Lost connection to the Tor daemon. "
                                        "Tor Monitor will try to reconnect..."))
         self._infobar.set_message_type(Gtk.MessageType.ERROR)
@@ -220,7 +220,8 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         :returns: **False**
         """
         logging.debug("Controller initialized")
-        self._hbox.set_sensitive(True)
+        self._path.set_sensitive(False)
+        self._treeview.set_sensitive(False)
         self._infobar_label.set_text(_("Reconnected to the Tor daemon! "
                                        "You can use Tor Monitor again."))
         self._infobar.set_message_type(Gtk.MessageType.INFO)
