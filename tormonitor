@@ -38,7 +38,7 @@ from gi.repository import (GLib,
 
 gettext.install('tormonitor')
 
-if os.environ.has_key('DEBUG') and os.environ['DEBUG']:
+if 'DEBUG' in os.environ and os.environ['DEBUG']:
     logging.basicConfig(level=logging.DEBUG)
 else:
     logging.getLogger('stem').setLevel(logging.WARNING)
@@ -492,7 +492,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         circ_id = model.get_value(circuit_iter, 1)
         try:
             circuit = self.controller.get_circuit(circ_id)
-        except ValueError, e: # The circuit doesn't exist anymore
+        except ValueError as e: # The circuit doesn't exist anymore
             logging.debug("circuit %s not known by Tor: %s" % (circ_id, e))
             return False
         self.show_circuit_details(circuit)
