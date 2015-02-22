@@ -134,7 +134,11 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         scrolledwindow_circuits.add(self._treeview)
         self._hbox.pack_start(scrolledwindow_circuits, expand=True, fill=True, padding=0)
 
-        self._path = Gtk.Label(_("Click on a path to get details"))
+        self._path = Gtk.ListBox()
+        self._path.set_selection_mode(Gtk.SelectionMode.NONE)
+        placeholder = Gtk.Label(_("Click on a path to get details"))
+        placeholder.show()
+        self._path.set_placeholder(placeholder)
         self._hbox.pack_start(self._path, expand=True, fill=True, padding=0)
 
         self.show_all()
@@ -482,6 +486,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         """
         (model, selected_iter) = treeselection.get_selected()
         if not selected_iter:
+            self.clear_circuit_details()
             return False
 
         if model.get_value(selected_iter, 0) == self.TYPE_STREAM: # Stream
@@ -498,17 +503,18 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self.show_circuit_details(circuit)
         return False
 
+    def clear_circuit_details(self):
+        def remove_row(child, container):
+            container.remove(child)
+            return False
+        self._path.foreach(remove_row, self._path)
+
     def show_circuit_details(self, circuit):
         """Display details for a circuit
 
         :var stem.response.events.CircuitEvent circuit: the circuit
         """
-        logging.debug("looking up details for %s" % circuit)
-
-        # Replace the old content of _path by a fresh ListBox.
-        self._path.destroy()
-        self._path = Gtk.ListBox()
-        self._hbox.pack_start(self._path, expand=True, fill=True, padding=0)
+        self.clear_circuit_details()
 
         for fp in [fp for fp, nick in circuit.path]:
             self.display_node(self.controller.get_network_status(fp))
