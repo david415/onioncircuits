@@ -39,7 +39,7 @@ from gi.repository import (GLib,
 gettext.install('tormonitor')
 
 if 'DEBUG' in os.environ and os.environ['DEBUG']:
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=int(os.environ['DEBUG']))
 else:
     logging.getLogger('stem').setLevel(logging.WARNING)
 
