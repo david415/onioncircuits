@@ -220,7 +220,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
         :returns: **False**
         """
-        logging.debug("Controller initialized")
+        logging.info("controller connected")
         self._path.set_sensitive(True)
         self._treeview.set_sensitive(True)
         self._infobar_label.set_text(_("Connected to the Tor daemon! "
@@ -243,7 +243,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         **True** if we failed to reconnect (so that GLib.timeout_add will call
         the method again).
         """
-        logging.debug("Trying to reconnect the controller")
+        logging.debug("trying to reconnect the controller")
         try:
             self.controller.connect()
             self.controller.authenticate()
@@ -263,7 +263,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         **True** if we failed to connect (so that GLib.timeout_add will call
         the method again).
         """
-        logging.debug("Trying to connect the controller")
+        logging.debug("trying to connect the controller")
         controller = self.get_application().connect_controller()
         if controller:
             self.controller = controller
@@ -288,7 +288,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             # It may happen that the treeiter is not valid anymore
             # e.g. because it represents a stream that has been remapped
             # to another circuit.
-            logging.debug("cannot remove %s which is not valid")
+            logging.warn("cannot remove %s which is not valid")
         return False # to cancel the repetition when used in timeout_add
 
     # Circuits
@@ -328,7 +328,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
         :var stem.response.events.CircuitEvent circuit: the circuit
         """
-        logging.debug("updating circuit %s" % circuit)
+        logging.debug("updating circuit %s" % circuit.id)
         if circuit.reason:
             status = _("%s: %s") % (str(circuit.status).capitalize(),
                                     str(circuit.reason).lower())
@@ -397,7 +397,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             return None
         circ_iter = self._circ_to_iter[stream.circ_id]
         if not circ_iter:
-            logging.warn("No iter found for %s" % circ_id)
+            logging.warn("no iter found for %s" % circ_id)
             circ_iter = self.add_circuit(self.controller.get_circuit(circ_id))
         stream_iter = self._treestore.append(circ_iter,
                     [self.TYPE_STREAM,
@@ -500,7 +500,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         try:
             circuit = self.controller.get_circuit(circ_id)
         except ValueError as e: # The circuit doesn't exist anymore
-            logging.debug("circuit %s not known by Tor: %s" % (circ_id, e))
+            logging.warn("circuit %s not known by Tor: %s" % (circ_id, e))
             return False
         self.show_circuit_details(circuit)
         return False
