@@ -531,7 +531,12 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         """
         country = self.controller.get_info("ip-to-country/%s" % status_entry.address)
         if pycountry:
-            country = pycountry.countries.get(alpha2=country.upper()).name
+            try:
+                country = pycountry.countries.get(alpha2=country.upper()).name
+            except KeyError:
+                # If pycountry can't find the country, just display the string
+                # returned by Tor.
+                pass
 
         grid = Gtk.Grid()
         grid.set_property('row-spacing', 6)
