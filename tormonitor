@@ -223,8 +223,8 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         logging.debug("Controller initialized")
         self._path.set_sensitive(True)
         self._treeview.set_sensitive(True)
-        self._infobar_label.set_text(_("Reconnected to the Tor daemon! "
-                                       "You can use Tor Monitor again."))
+        self._infobar_label.set_text(_("Connected to the Tor daemon! "
+                                       "You can use now Tor Monitor."))
         self._infobar.set_message_type(Gtk.MessageType.INFO)
         self._infobar.show()
         self.init_listeners()
