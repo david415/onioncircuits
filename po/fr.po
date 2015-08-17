@@ -1,0 +1,91 @@
+# Tor Monitor - a GTK applicaton to display Tor circuits and streams
+# Copyright (C) 2015  Tails developers
+# This file is distributed under the same license as the Tor Manitor package.
+# Tails Developers <tails@boum.org>, 2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-08-17 20:57+0000\n"
+"PO-Revision-Date: 2015-08-17 21:05-0000\n"
+"Last-Translator: Tails Developers <tails@boum.org>\n"
+"Language-Team: Tails Developers <tails@boum.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#: ../tormonitor:77
+msgid "Cannot connect to the Tor daemon. Tor Monitor will try to reconnect..."
+msgstr ""
+"Impossible de se connecter au démon Tor. Tor Monitor va essayer de se "
+"reconnecter..."
+
+#: ../tormonitor:90
+msgid "Tor Monitor"
+msgstr "Tor Monitor"
+
+#: ../tormonitor:91
+msgid "Display Tor circuits and streams"
+msgstr "Affiche les circuits et les flux de Tor"
+
+#: ../tormonitor:104
+msgid "OK"
+msgstr "OK"
+
+#: ../tormonitor:121
+msgid "Path"
+msgstr "Chemin"
+
+#: ../tormonitor:122
+msgid "Status"
+msgstr "Statut"
+
+#: ../tormonitor:135
+msgid "Click on a path to get details"
+msgstr "Cliquez sur un chemin pour obtenir des détails"
+
+#: ../tormonitor:209
+msgid "Lost connection to the Tor daemon. Tor Monitor will try to reconnect..."
+msgstr ""
+"Connexion au démon Tor perdue. Tor Monitor va essayer de se reconnecter..."
+
+#: ../tormonitor:226
+msgid "Connected to the Tor daemon! You can use now Tor Monitor."
+msgstr "Connecté au démon Tor. Vous pouvez maintenant utiliser Tor Monitor."
+
+#: ../tormonitor:308
+msgid "Building..."
+msgstr "En construction..."
+
+#: ../tormonitor:333
+#, c-format
+msgid "%s: %s"
+msgstr "%s : %s"
+
+#: ../tormonitor:552
+msgid "Fingerprint:"
+msgstr "Empreinte :"
+
+#: ../tormonitor:553
+msgid "Published:"
+msgstr "Publié :"
+
+#: ../tormonitor:554
+msgid "IP:"
+msgstr "IP :"
+
+#: ../tormonitor:554
+#, c-format
+msgid "%s (%s)"
+msgstr "%s (%s)"
+
+#: ../tormonitor:555
+msgid "Bandwidth:"
+msgstr "Bande passante :"
+
+#: ../tormonitor:555
+#, c-format
+msgid "%.2f Mb/s"
+msgstr "%2f Mo/s"
