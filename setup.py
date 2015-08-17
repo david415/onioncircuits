@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Tor Monitor - a GTK applicaton to display Tor circuits and streams
 # Copyright (C) 2015  Tails developers
