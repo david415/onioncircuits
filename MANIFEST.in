@@ -1,0 +1,5 @@
+include README
+include tormonitor
+include tormonitor.desktop
+include tormonitor.svg
+recursive-include po *.po POTFILES.in
