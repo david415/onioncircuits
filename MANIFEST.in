@@ -1,4 +1,5 @@
 include README
+include README.translators
 include tormonitor
 include tormonitor.desktop
 include tormonitor.svg
