@@ -423,7 +423,9 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
                 stream_iter = self.add_stream(stream)
         else:
             # The stream didn't change parent. Update it.
-            self._treestore.set(stream_iter, 2, self.stream_label(stream))
+            #
+            # We should not update the stream label because this would
+            # replace the hostname by its IP address.
             if stream.status:
                 self._treestore.set(stream_iter, 3, str(stream.status).capitalize())
 
