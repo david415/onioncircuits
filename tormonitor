@@ -414,8 +414,9 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         :var stem.response.events.StreamEvent stream: the stream
         """
         stream_iter = self._stream_to_iter[stream.id]
-        if stream.circ_id != self._treestore.get_value(stream_iter, 1):
-            # The stream doesn't belong its parent circuit anymore. Remove it.
+        circuit_iter = self._treestore.iter_parent(stream_iter)
+        if stream.circ_id != self._treestore.get_value(circuit_iter, 1):
+            # The stream doesn't belong to its parent circuit anymore. Remove it.
             self.remove_stream(stream)
             if stream.circ_id:
                 # The stream has a new circuit, add it with its new parent.
