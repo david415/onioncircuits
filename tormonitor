@@ -93,7 +93,6 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self.set_titlebar(headerbar)
 
         grid = Gtk.Grid()
-        grid.set_column_homogeneous(True)
         self.add(grid)
 
         self._infobar = Gtk.InfoBar()
@@ -127,6 +126,9 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         scrolledwindow_circuits.set_property('expand', True)
         scrolledwindow_circuits.set_property('halign', Gtk.Align.FILL)
         scrolledwindow_circuits.set_property('valign', Gtk.Align.FILL)
+        scrolledwindow_circuits.set_policy(
+                hscrollbar_policy=Gtk.PolicyType.NEVER,
+                vscrollbar_policy=Gtk.PolicyType.AUTOMATIC)
         grid.attach(scrolledwindow_circuits, 0, 1, 1, 1)
 
         # Circuit details
