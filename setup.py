@@ -20,7 +20,7 @@ from distutils.core import setup, Command
 from DistUtilsExtra.command import *
 
 setup(name='tormonitor',
-      version='0.1',
+      version='0.2',
       description='a GTK applicaton to display Tor circuits and streams',
       author='Tails developers',
       author_email='tails@boum.org',
