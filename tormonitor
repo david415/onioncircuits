@@ -287,10 +287,10 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         if self._treestore.iter_is_valid(treeiter):
             self._treestore.remove(treeiter)
         else:
-            # It may happen that the treeiter is not valid anymore
+            # XXX: it may happen that the treeiter is not valid anymore
             # e.g. because it represents a stream that has been remapped
             # to another circuit.
-            logging.warn("cannot remove %s which is not valid")
+            logging.warn("cannot remove %s which is not valid" % treeiter)
         return False # to cancel the repetition when used in timeout_add
 
     # Circuits
