@@ -19,15 +19,15 @@
 from distutils.core import setup, Command
 from DistUtilsExtra.command import *
 
-setup(name='tormonitor',
+setup(name='tor-monitor',
       version='0.2',
       description='a GTK applicaton to display Tor circuits and streams',
       author='Tails developers',
       author_email='tails@boum.org',
       license='GNU GPL v3',
-      scripts=['tormonitor'],
-      data_files=[('share/icons/hicolor/scalable/apps', ['tormonitor.svg']),
-                  ('share/applications', ['tormonitor.desktop'])],
+      scripts=['tor-monitor'],
+      data_files=[('share/icons/hicolor/scalable/apps', ['tor-monitor.svg']),
+                  ('share/applications', ['tor-monitor.desktop'])],
       requires=['stem', 'gi'],
       cmdclass = { "build" : build_extra.build_extra,
                    "build_i18n" :  build_i18n.build_i18n,
