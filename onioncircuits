@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Onion Circuits - a GTK applicaton to display Tor circuits and streams
-# Copyright (C) 2015  Tails developers
+# Copyright (C) 2016  Tails developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
