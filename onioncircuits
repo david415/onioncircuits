@@ -43,7 +43,7 @@ if 'DEBUG' in os.environ and os.environ['DEBUG']:
 else:
     logging.getLogger('stem').setLevel(logging.WARNING)
 
-class TorMonitorWindow(Gtk.ApplicationWindow):
+class OnionCircuitsWindow(Gtk.ApplicationWindow):
     """Onion Circuits main window
 
     This class contains all the UI and the logic to update.
@@ -54,7 +54,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
     TYPE_STREAM = 1
 
     def __init__(self, app):
-        """Create a new TorMonitorWindow
+        """Create a new OnionCircuitsWindow
 
         :var Gtk.Application app: the application which own the window
         """
@@ -573,7 +573,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._path.add(grid)
         grid.show_all()
 
-class TorMonitorApplication(Gtk.Application):
+class OnionCircuitsApplication(Gtk.Application):
     """Onion Circuits application
 
     :var stem.control.Controller controller: a controller to the Tor daemon
@@ -591,12 +591,12 @@ class TorMonitorApplication(Gtk.Application):
         return self.controller
 
     def do_activate(self):
-        win = TorMonitorWindow(self)
+        win = OnionCircuitsWindow(self)
         win.show_all()
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
-app = TorMonitorApplication()
+app = OnionCircuitsApplication()
 exit_status = app.run(sys.argv)
 sys.exit(exit_status)

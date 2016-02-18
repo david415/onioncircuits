@@ -1,10 +1,10 @@
 [Desktop Entry]
 Name=Onion Circuits
 Comment=Display Tor circuits and streams
-TryExec=tormonitor
-Exec=tormonitor
+TryExec=onioncircuits
+Exec=onioncircuits
 StartupNotify=true
 Terminal=false
 Type=Application
-Icon=tormonitor
+Icon=onioncircuits
 Categories=GTK;Network;
