@@ -8,3 +8,4 @@ Terminal=false
 Type=Application
 Icon=onioncircuits
 Categories=GTK;Network;
+Keywords=tor;monitor;circuits;
