@@ -16,76 +16,76 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 1.5.4\n"
 
-#: ../tormonitor:77
+#: ../onioncircuits:77
 msgid "Cannot connect to the Tor daemon. Onion Circuits will try to reconnect..."
 msgstr ""
 "Impossible de se connecter au démon Tor. Onion Circuits va essayer de se "
 "reconnecter..."
 
-#: ../tormonitor:90
+#: ../onioncircuits:90
 msgid "Onion Circuits"
 msgstr "Onion Circuits"
 
-#: ../tormonitor:91
+#: ../onioncircuits:91
 msgid "Display Tor circuits and streams"
 msgstr "Affiche les circuits et les flux de Tor"
 
-#: ../tormonitor:104
+#: ../onioncircuits:104
 msgid "OK"
 msgstr "OK"
 
-#: ../tormonitor:121
+#: ../onioncircuits:121
 msgid "Path"
 msgstr "Chemin"
 
-#: ../tormonitor:122
+#: ../onioncircuits:122
 msgid "Status"
 msgstr "Statut"
 
-#: ../tormonitor:135
+#: ../onioncircuits:135
 msgid "Click on a path to get details"
 msgstr "Cliquez sur un chemin pour obtenir des détails"
 
-#: ../tormonitor:209
+#: ../onioncircuits:209
 msgid "Lost connection to the Tor daemon. Onion Circuits will try to reconnect..."
 msgstr ""
 "Connexion au démon Tor perdue. Onion Circuits va essayer de se reconnecter..."
 
-#: ../tormonitor:226
+#: ../onioncircuits:226
 msgid "Connected to the Tor daemon! You can use now Onion Circuits."
 msgstr "Connecté au démon Tor. Vous pouvez maintenant utiliser Onion Circuits."
 
-#: ../tormonitor:308
+#: ../onioncircuits:308
 msgid "Building..."
 msgstr "En construction..."
 
-#: ../tormonitor:333
+#: ../onioncircuits:333
 #, c-format
 msgid "%s: %s"
 msgstr "%s : %s"
 
-#: ../tormonitor:552
+#: ../onioncircuits:552
 msgid "Fingerprint:"
 msgstr "Empreinte :"
 
-#: ../tormonitor:553
+#: ../onioncircuits:553
 msgid "Published:"
 msgstr "Publié :"
 
-#: ../tormonitor:554
+#: ../onioncircuits:554
 msgid "IP:"
 msgstr "IP :"
 
-#: ../tormonitor:554
+#: ../onioncircuits:554
 #, c-format
 msgid "%s (%s)"
 msgstr "%s (%s)"
 
-#: ../tormonitor:555
+#: ../onioncircuits:555
 msgid "Bandwidth:"
 msgstr "Bande passante :"
 
-#: ../tormonitor:555
+#: ../onioncircuits:555
 #, c-format
 msgid "%.2f Mb/s"
 msgstr "%2f Mo/s"

@@ -2,4 +2,4 @@ MANIFEST
 build/
 dist/
 po/*.mo
-po/tormonitor.pot
+po/onioncircuits.pot
