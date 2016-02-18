@@ -28,10 +28,14 @@ try:
 except ImportError:
     pycountry = None
 
+import gi
 import stem
 import stem.connection
 import stem.control
 
+gi.require_version('GLib', '2.0')
+gi.require_version('GObject', '2.0')
+gi.require_version('Gtk', '3.0')
 from gi.repository import (GLib,
                            GObject,
                            Gtk)
