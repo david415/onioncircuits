@@ -1,15 +1,15 @@
-Tor Monitor - a GTK application to display Tor circuits and streams
+Onion Circuits - a GTK application to display Tor circuits and streams
 Copyright (C) 2015  Tails developers
 
 Dependencies
 ============
 
-Tor Monitor depends on python3 (>= 3.4.2), python3-gi (>= 3.14.0), python3-stem
+Onion Circuits depends on python3 (>= 3.4.2), python3-gi (>= 3.14.0), python3-stem
 (>= 1.2.2), Gtk GIR (>= 3.14), GLib GIR (>= 1.42).
 
 It recommends pycountry (>= 1.8).
 
-Tor Monitor also build-depends on python3-distutils-extra.
+Onion Circuits also build-depends on python3-distutils-extra.
 
 On Debian system (>= 8.0), these can be installed with:
 

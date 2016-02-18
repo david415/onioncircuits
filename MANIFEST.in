@@ -1,6 +1,6 @@
 include README
 include README.translators
-include tor-monitor
-include tor-monitor.desktop
-include tor-monitor.svg
+include onioncircuits
+include onioncircuits.desktop
+include onioncircuits.svg
 recursive-include po *.po POTFILES.in

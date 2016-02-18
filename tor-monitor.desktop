@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=Tor Monitor
+Name=Onion Circuits
 Comment=Display Tor circuits and streams
 TryExec=tormonitor
 Exec=tormonitor

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Tor Monitor - a GTK applicaton to display Tor circuits and streams
+# Onion Circuits - a GTK applicaton to display Tor circuits and streams
 # Copyright (C) 2015  Tails developers
 #
 # This program is free software: you can redistribute it and/or modify
@@ -44,7 +44,7 @@ else:
     logging.getLogger('stem').setLevel(logging.WARNING)
 
 class TorMonitorWindow(Gtk.ApplicationWindow):
-    """Tor Monitor main window
+    """Onion Circuits main window
 
     This class contains all the UI and the logic to update.
     """
@@ -75,7 +75,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
             self._path.set_sensitive(False)
             self._treeview.set_sensitive(False)
             self._infobar_label.set_text(_("Cannot connect to the Tor daemon. "
-                                           "Tor Monitor will try to reconnect..."))
+                                           "Onion Circuits will try to reconnect..."))
             self._infobar.set_message_type(Gtk.MessageType.ERROR)
             self._infobar.show()
 
@@ -87,7 +87,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self.connect('delete-event', self.delete_event_cb)
 
         headerbar = Gtk.HeaderBar()
-        headerbar.set_title(_("Tor Monitor"))
+        headerbar.set_title(_("Onion Circuits"))
         headerbar.set_subtitle(_("Display Tor circuits and streams"))
         headerbar.set_show_close_button(True)
         self.set_titlebar(headerbar)
@@ -209,7 +209,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._path.set_sensitive(False)
         self._treeview.set_sensitive(False)
         self._infobar_label.set_text(_("Lost connection to the Tor daemon. "
-                                       "Tor Monitor will try to reconnect..."))
+                                       "Onion Circuits will try to reconnect..."))
         self._infobar.set_message_type(Gtk.MessageType.ERROR)
         self._infobar.show()
         self._treestore.clear()
@@ -226,7 +226,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         self._path.set_sensitive(True)
         self._treeview.set_sensitive(True)
         self._infobar_label.set_text(_("Connected to the Tor daemon! "
-                                       "You can use now Tor Monitor."))
+                                       "You can use now Onion Circuits."))
         self._infobar.set_message_type(Gtk.MessageType.INFO)
         self._infobar.show()
         self.init_listeners()
@@ -367,12 +367,15 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
 
         :var stem.response.events.CircuitEvent circ_event: the circuit event
         """
+        circ_is_closed = circ_event.status in [stem.CircStatus.FAILED,
+                                               stem.CircStatus.CLOSED]
+
         if circ_event.id not in self._circ_to_iter:
-            self.add_circuit(circ_event)
+            if not circ_is_closed:
+                self.add_circuit(circ_event)
         else:
             self.update_circuit(circ_event)
-            if (circ_event.status == stem.CircStatus.FAILED
-                    or circ_event.status == stem.CircStatus.CLOSED):
+            if circ_is_closed:
                 self.remove_circuit_delayed(circ_event)
 
     # Streams
@@ -571,7 +574,7 @@ class TorMonitorWindow(Gtk.ApplicationWindow):
         grid.show_all()
 
 class TorMonitorApplication(Gtk.Application):
-    """Tor Monitor application
+    """Onion Circuits application
 
     :var stem.control.Controller controller: a controller to the Tor daemon
     """

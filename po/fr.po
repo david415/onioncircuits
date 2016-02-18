@@ -1,4 +1,4 @@
-# Tor Monitor - a GTK applicaton to display Tor circuits and streams
+# Onion Circuits - a GTK applicaton to display Tor circuits and streams
 # Copyright (C) 2015  Tails developers
 # This file is distributed under the same license as the Tor Manitor package.
 # Tails Developers <tails@boum.org>, 2015.
@@ -17,14 +17,14 @@ msgstr ""
 "X-Generator: Poedit 1.5.4\n"
 
 #: ../tormonitor:77
-msgid "Cannot connect to the Tor daemon. Tor Monitor will try to reconnect..."
+msgid "Cannot connect to the Tor daemon. Onion Circuits will try to reconnect..."
 msgstr ""
-"Impossible de se connecter au démon Tor. Tor Monitor va essayer de se "
+"Impossible de se connecter au démon Tor. Onion Circuits va essayer de se "
 "reconnecter..."
 
 #: ../tormonitor:90
-msgid "Tor Monitor"
-msgstr "Tor Monitor"
+msgid "Onion Circuits"
+msgstr "Onion Circuits"
 
 #: ../tormonitor:91
 msgid "Display Tor circuits and streams"
@@ -47,13 +47,13 @@ msgid "Click on a path to get details"
 msgstr "Cliquez sur un chemin pour obtenir des détails"
 
 #: ../tormonitor:209
-msgid "Lost connection to the Tor daemon. Tor Monitor will try to reconnect..."
+msgid "Lost connection to the Tor daemon. Onion Circuits will try to reconnect..."
 msgstr ""
-"Connexion au démon Tor perdue. Tor Monitor va essayer de se reconnecter..."
+"Connexion au démon Tor perdue. Onion Circuits va essayer de se reconnecter..."
 
 #: ../tormonitor:226
-msgid "Connected to the Tor daemon! You can use now Tor Monitor."
-msgstr "Connecté au démon Tor. Vous pouvez maintenant utiliser Tor Monitor."
+msgid "Connected to the Tor daemon! You can use now Onion Circuits."
+msgstr "Connecté au démon Tor. Vous pouvez maintenant utiliser Onion Circuits."
 
 #: ../tormonitor:308
 msgid "Building..."
