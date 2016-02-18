@@ -20,7 +20,7 @@ from distutils.core import setup, Command
 from DistUtilsExtra.command import *
 
 setup(name='onioncircuits',
-      version='0.2',
+      version='0.3',
       description='a GTK applicaton to display Tor circuits and streams',
       author='Tails developers',
       author_email='tails@boum.org',
