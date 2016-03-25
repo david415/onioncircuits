@@ -1,4 +1,4 @@
-The POT file can be generated with:
+The POT file can be updated with:
 
     ./setup.py build_i18n
 
