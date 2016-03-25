@@ -2,4 +2,3 @@ MANIFEST
 build/
 dist/
 po/*.mo
-po/onioncircuits.pot
