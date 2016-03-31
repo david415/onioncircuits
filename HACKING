@@ -1,0 +1,5 @@
+Release
+=======
+
+~/path/to/tails/git/import-translations && \
+git commit po -m 'Update POT and PO files.'
