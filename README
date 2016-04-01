@@ -21,3 +21,11 @@ Installation
 
     ./setup.py build
     sudo ./setup.py install
+
+Feedback
+========
+
+Please submit your bugreports and patches to with "Onion Circuits" as affected
+tool:
+
+    https://labs.riseup.net/code/projects/tails/issues
