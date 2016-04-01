@@ -87,7 +87,9 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
     def _create_ui(self):
         """Creates the user interface
         """
-        self.set_default_size(600, 400)
+        self.set_default_size(
+                width=min(900, self.get_screen().get_width()),
+                height=min(500, self.get_screen().get_height()))
         self.set_icon_name('onioncircuits')
         self.connect('delete-event', self.delete_event_cb)
 
@@ -98,6 +100,7 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         self.set_titlebar(headerbar)
 
         grid = Gtk.Grid()
+        grid.set_column_homogeneous(True)
         self.add(grid)
 
         self._infobar = Gtk.InfoBar()
@@ -132,7 +135,7 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         scrolledwindow_circuits.set_property('halign', Gtk.Align.FILL)
         scrolledwindow_circuits.set_property('valign', Gtk.Align.FILL)
         scrolledwindow_circuits.set_policy(
-                hscrollbar_policy=Gtk.PolicyType.NEVER,
+                hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
                 vscrollbar_policy=Gtk.PolicyType.AUTOMATIC)
         grid.attach(scrolledwindow_circuits, 0, 1, 1, 1)
 
@@ -141,11 +144,17 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         self._path.set_selection_mode(Gtk.SelectionMode.NONE)
         self._placeholder = Gtk.Label(_("Click on a path to get details"))
         self._path.set_placeholder(self._placeholder)
-        self._path.set_property('margin', 6)
-        self._path.set_property('expand', True)
-        self._path.set_property('halign', Gtk.Align.FILL)
-        self._path.set_property('valign', Gtk.Align.FILL)
-        grid.attach(self._path, 1, 1, 1, 1)
+
+        scrolledwindow_path = Gtk.ScrolledWindow()
+        scrolledwindow_path.add(self._path)
+        scrolledwindow_path.set_property('margin', 6)
+        scrolledwindow_path.set_property('expand', True)
+        scrolledwindow_path.set_property('halign', Gtk.Align.FILL)
+        scrolledwindow_path.set_property('valign', Gtk.Align.FILL)
+        scrolledwindow_path.set_policy(
+                hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
+                vscrollbar_policy=Gtk.PolicyType.AUTOMATIC)
+        grid.attach(scrolledwindow_path, 1, 1, 1, 1)
 
         self.show_all()
 
