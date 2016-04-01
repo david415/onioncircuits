@@ -65,6 +65,7 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         Gtk.Window.__init__(self, application=app)
 
         self._listeners_initialized = False
+        self._geoip_message_shown = False
         self._circ_to_iter = {}
         self._stream_to_iter = {}
         self.controller = self.get_application().controller
@@ -541,14 +542,30 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         :var stem.descriptor.router_status_entry.RouterStatusEntryMicroV3
         status_entry: the status entry for the node
         """
-        country = self.controller.get_info("ip-to-country/%s" % status_entry.address)
-        if pycountry:
+        try:
+            country = self.controller.get_info("ip-to-country/%s" % status_entry.address)
+        except stem.ProtocolError:
+            country = None
+            if not self._geoip_message_shown:
+                self._infobar_label.set_text(_("GeoIP database unavailable. "
+                                               "No country information will be displayed."))
+                self._infobar.set_message_type(Gtk.MessageType.WARNING)
+                self._infobar.show()
+                self._geoip_message_shown = True
+
+        if pycountry and country:
             try:
                 country = pycountry.countries.get(alpha2=country.upper()).name
             except KeyError:
                 # If pycountry can't find the country, just display the string
                 # returned by Tor.
                 pass
+
+        # if we couldn't get a country, just display the IP
+        if country:
+            ip_with_country = _("%s (%s)") % (status_entry.address, country)
+        else:
+            ip_with_country = str(status_entry.address)
 
         grid = Gtk.Grid()
         grid.set_property('row-spacing', 6)
@@ -563,7 +580,7 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         line = 1
         for l, v in [(_("Fingerprint:"), status_entry.fingerprint),
                      (_("Published:"), status_entry.published),
-                     (_("IP:"), _("%s (%s)") % (status_entry.address, country)),
+                     (_("IP:"), ip_with_country),
                      (_("Bandwidth:"), _("%.2f Mb/s") % (status_entry.bandwidth/1024.)),
                     ]:
             label = Gtk.Label(l)
