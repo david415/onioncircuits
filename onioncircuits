@@ -139,9 +139,8 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         # Circuit details
         self._path = Gtk.ListBox()
         self._path.set_selection_mode(Gtk.SelectionMode.NONE)
-        placeholder = Gtk.Label(_("Click on a path to get details"))
-        placeholder.show()
-        self._path.set_placeholder(placeholder)
+        self._placeholder = Gtk.Label(_("Click on a path to get details"))
+        self._path.set_placeholder(self._placeholder)
         self._path.set_property('margin', 6)
         self._path.set_property('expand', True)
         self._path.set_property('halign', Gtk.Align.FILL)
@@ -218,6 +217,7 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         self._infobar.set_message_type(Gtk.MessageType.ERROR)
         self._infobar.show()
         self._treestore.clear()
+        self._placeholder.set_visible(False)
         return False
 
     def connection_init_cb(self):
@@ -322,6 +322,7 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
 
         :returns: the :class:`Gtk.TreeIter` corresponding to the circuit
         """
+        self._placeholder.set_visible(True)
         circ_iter = self._treestore.append(None,
                         [self.TYPE_CIRC,
                         circuit.id,
