@@ -531,19 +531,20 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         """
         self.clear_circuit_details()
 
-        for fp in [fp for fp, nick in circuit.path]:
-            self.display_node(self.controller.get_network_status(fp))
+        for fp, nick in circuit.path:
+            self.display_node(fp, nick)
 
         self._path.show_all()
 
-    def display_node(self, status_entry):
-        """Display details for a node
+    def get_country(self, address):
+        """Get the country corresponding to an IP address
 
-        :var stem.descriptor.router_status_entry.RouterStatusEntryMicroV3
-        status_entry: the status entry for the node
+        :var str address: an ip address
+
+        :returns: a string containing the country name, or **None**
         """
         try:
-            country = self.controller.get_info("ip-to-country/%s" % status_entry.address)
+            country = self.controller.get_info("ip-to-country/%s" % address)
         except stem.ProtocolError:
             country = None
             if not self._geoip_message_shown:
@@ -560,12 +561,34 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
                 # If pycountry can't find the country, just display the string
                 # returned by Tor.
                 pass
+        return country
 
-        # if we couldn't get a country, just display the IP
-        if country:
+    def display_node(self, fingerprint, nickname):
+        """Display details for a node
+
+        :var string fingerprint: the fingerprint of the node
+
+        :var string nickname: the nickname of the node
+        """
+        try:
+            status_entry = self.controller.get_network_status(fingerprint)
+        except stem.DescriptorUnavailable:
+            status_entry = None
+
+        if status_entry:
+            country = self.get_country(status_entry.address)
+            if country:
+                ip_with_country = _("%s (%s)") % (status_entry.address, country)
+            else: # we couldn't get a country, just display the IP
+                ip_with_country = str(status_entry.address)
+
+            published = status_entry.published
             ip_with_country = _("%s (%s)") % (status_entry.address, country)
+            bandwidth = _("%.2f Mb/s") % (status_entry.bandwidth/1024.)
         else:
-            ip_with_country = str(status_entry.address)
+            published = _("Unknown")
+            ip_with_country = _("Unknown")
+            bandwidth = _("Unknown")
 
         grid = Gtk.Grid()
         grid.set_property('row-spacing', 6)
@@ -573,15 +596,15 @@ class OnionCircuitsWindow(Gtk.ApplicationWindow):
         grid.set_property('margin', 12)
 
         title = Gtk.Label()
-        title.set_markup("<b>%s</b>" % status_entry.nickname)
+        title.set_markup("<b>%s</b>" % nickname)
         title.set_halign(Gtk.Align.START)
         grid.attach(title, 0, 0, 2, 1)
 
         line = 1
-        for l, v in [(_("Fingerprint:"), status_entry.fingerprint),
-                     (_("Published:"), status_entry.published),
+        for l, v in [(_("Fingerprint:"), fingerprint),
+                     (_("Published:"), published),
                      (_("IP:"), ip_with_country),
-                     (_("Bandwidth:"), _("%.2f Mb/s") % (status_entry.bandwidth/1024.)),
+                     (_("Bandwidth:"), bandwidth),
                     ]:
             label = Gtk.Label(l)
             label.set_halign(Gtk.Align.START)
