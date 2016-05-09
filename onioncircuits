@@ -641,7 +641,10 @@ class OnionCircuitsApplication(Gtk.Application):
     def connect_controller(self):
         """Connects the controller to the Tor daemon.
         """
-        self.controller = stem.connection.connect_socket_file()
+        control_path = os.environ.get('TOR_CONTROL_PORT')
+        if control_path is None:
+            control_path = '/var/run/tor/control'
+        self.controller = stem.connection.connect_socket_file(path=control_path)
         return self.controller
 
     def do_activate(self):
